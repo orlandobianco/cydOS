@@ -2,5 +2,5 @@
 #define HOME_SCREEN_H
 
 void drawHomeScreen();
-
+void drawSlideUpMenu();
 #endif

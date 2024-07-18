@@ -104,4 +104,57 @@ void drawHomeScreen() {
     lv_obj_t *label9 = lv_label_create(btn9);
     lv_label_set_text(label9, "Another");
     lv_obj_center(label9);  // Centra la scritta
+   drawSlideUpMenu();
+}
+// Handler per il pulsante della torcia
+static void torch_event_handler(lv_event_t * e) {
+    lv_obj_t *btn = lv_event_get_target(e);
+    if (lv_obj_get_state(btn) & LV_STATE_CHECKED) {
+        lv_obj_clear_state(btn, LV_STATE_CHECKED);
+        lv_obj_set_style_bg_color(btn, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro
+        lv_obj_set_style_text_color(lv_obj_get_child(btn, 0), lv_color_white(), 0);  // Testo bianco
+    } else {
+        lv_obj_add_state(btn, LV_STATE_CHECKED);
+        lv_obj_set_style_bg_color(btn, lv_color_hex(0x0000FF), 0);  // Colore blu
+        lv_obj_set_style_text_color(lv_obj_get_child(btn, 0), lv_color_hex(0xFFFF00), 0);  // Testo giallo
+    }
+}
+
+void drawSlideUpMenu() {
+    lv_obj_t *parent = lv_scr_act();
+
+    // Menu a scomparsa
+    lv_obj_t *slide_menu = lv_obj_create(parent);
+    lv_obj_set_size(slide_menu, 240, 45);  // Ridurre l'altezza del menu
+    lv_obj_set_style_bg_color(slide_menu, lv_color_hex(0xD3D3D3), 0);  // Colore grigio chiaro
+    lv_obj_align(slide_menu, LV_ALIGN_BOTTOM_MID,0,0);  // Posizionare il menu appena sopra la barra
+    lv_obj_clear_flag(slide_menu, LV_OBJ_FLAG_SCROLLABLE);  // Disabilita lo scrolling per il menu
+
+    // Pulsante Torcia
+    lv_obj_t *torch_btn = lv_btn_create(slide_menu);
+    lv_obj_set_size(torch_btn, 40, 40);  // Rendere i pulsanti più piccoli
+    lv_obj_add_event_cb(torch_btn, torch_event_handler, LV_EVENT_CLICKED, NULL);
+    lv_obj_align(torch_btn, LV_ALIGN_LEFT_MID, 10, 0);  // Aggiungere margine per evitare che i pulsanti si tocchino
+    lv_obj_set_style_bg_color(torch_btn, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro iniziale
+    lv_obj_t *torch_label = lv_label_create(torch_btn);
+    lv_label_set_text(torch_label, "Torch");  // Utilizzare una rappresentazione testuale semplice
+    lv_obj_center(torch_label);
+
+    // Placeholder 1
+    lv_obj_t *placeholder1_btn = lv_btn_create(slide_menu);
+    lv_obj_set_size(placeholder1_btn, 40, 40);  // Rendere i pulsanti più piccoli
+    lv_obj_align(placeholder1_btn, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_bg_color(placeholder1_btn, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro
+    lv_obj_t *placeholder1_label = lv_label_create(placeholder1_btn);
+    lv_label_set_text(placeholder1_label, "Home");  // Placeholder text
+    lv_obj_center(placeholder1_label);
+
+    // Placeholder 2
+    lv_obj_t *placeholder2_btn = lv_btn_create(slide_menu);
+    lv_obj_set_size(placeholder2_btn, 40, 40);  // Rendere i pulsanti più piccoli
+    lv_obj_align(placeholder2_btn, LV_ALIGN_RIGHT_MID, -10, 0);  // Aggiungere margine per evitare che i pulsanti si tocchino
+    lv_obj_set_style_bg_color(placeholder2_btn, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro
+    lv_obj_t *placeholder2_label = lv_label_create(placeholder2_btn);
+    lv_label_set_text(placeholder2_label, "back");  // Placeholder text
+    lv_obj_center(placeholder2_label);
 }
