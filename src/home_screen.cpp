@@ -6,9 +6,9 @@
 
 void drawHomeScreen() {
     lv_obj_t *scr = lv_scr_act();
-    short int iconsize = 66;
+    short int iconsize = 67;
     // Imposta lo sfondo nero per la schermata principale
-    lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
+    lv_obj_set_style_bg_color(scr, lv_color_white(), 0);
 
     // Barra di stato
     lv_obj_t *status_bar = lv_obj_create(scr);
