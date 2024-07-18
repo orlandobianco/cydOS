@@ -31,19 +31,19 @@ void my_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *c
 // Touchpad read callback function
 void my_touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
     TouchPoint p = ts.getTouch();  // Use getTouch() function and correct type
-    Serial.printf("TouchPoint x: %d, y: %d\n", p.x, p.y);  // Debugging line
+    //Serial.printf("TouchPoint x: %d, y: %d\n", p.x, p.y);  // Debugging line
     if (p.x != 0 && p.y != 0) {  // Check if touch is detected
-        Serial.printf("Raw touch coordinates: x=%d, y=%d\n", p.x, p.y);
+      //  Serial.printf("Raw touch coordinates: x=%d, y=%d\n", p.x, p.y);
         data->point.x = 240 - p.y;  // Invert X coordinate
         data->point.y = p.x;
         data->state = LV_INDEV_STATE_PR;
-        Serial.printf("Using inverted touch coordinates: x=%d, y=%d, state=PR\n", data->point.x, data->point.y);
+        //Serial.printf("Using inverted touch coordinates: x=%d, y=%d, state=PR\n", data->point.x, data->point.y);
         if (!touchPressed) {
             touchPressed = true;
         }
     } else {
         data->state = LV_INDEV_STATE_REL;
-        Serial.println("Touch released, state=REL");
+      //  Serial.println("Touch released, state=REL");
         if (touchPressed) {
             touchPressed = false;
         }
