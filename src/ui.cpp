@@ -30,7 +30,7 @@ void drawNavBar() {
     lv_obj_align(torch_btn, LV_ALIGN_LEFT_MID, 10, 0);  // Aggiungere margine per evitare che i pulsanti si tocchino
     lv_obj_set_style_bg_color(torch_btn, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro iniziale
     lv_obj_t *torch_label = lv_label_create(torch_btn);
-    lv_label_set_text(torch_label, "Torch");  // Utilizzare una rappresentazione testuale semplice
+    lv_label_set_text(torch_label, LV_SYMBOL_EYE_OPEN);  // Utilizzare una rappresentazione testuale semplice
     lv_obj_center(torch_label);
 
     // HOME
@@ -40,7 +40,7 @@ void drawNavBar() {
     lv_obj_set_style_bg_color(home_BTN, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro
     lv_obj_add_event_cb(home_BTN, home_button_event_handler, LV_EVENT_CLICKED, NULL);
     lv_obj_t *home_BTN_label = lv_label_create(home_BTN);
-    lv_label_set_text(home_BTN_label, "Home");  // Placeholder text
+    lv_label_set_text(home_BTN_label, LV_SYMBOL_HOME);  // Placeholder text
     lv_obj_center(home_BTN_label);
 
     // back
@@ -49,6 +49,6 @@ void drawNavBar() {
     lv_obj_align(placeholder2_btn, LV_ALIGN_RIGHT_MID, -10, 0);  // Aggiungere margine per evitare che i pulsanti si tocchino
     lv_obj_set_style_bg_color(placeholder2_btn, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro
     lv_obj_t *placeholder2_label = lv_label_create(placeholder2_btn);
-    lv_label_set_text(placeholder2_label, "back");  // Placeholder text
+    lv_label_set_text(placeholder2_label, LV_SYMBOL_USB);  // Placeholder text
     lv_obj_center(placeholder2_label);
 }

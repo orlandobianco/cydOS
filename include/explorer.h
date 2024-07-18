@@ -19,5 +19,6 @@ void dir_event_handler(lv_event_t *e);
 void create_dir_event_handler(lv_event_t *e);
 void confirm_create_dir_event_handler(lv_event_t *e);
 void back_to_parent_dir(lv_event_t *e);
+void drawExplorerNavBar();
 
 #endif // EXPLORER_H

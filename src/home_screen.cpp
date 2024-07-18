@@ -41,7 +41,7 @@ void drawHomeScreen() {
     lv_obj_add_event_cb(btn1, settings_event_handler, LV_EVENT_CLICKED, NULL);
     lv_obj_set_grid_cell(btn1, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);  // Colonna 0, riga 0
     lv_obj_t *label1 = lv_label_create(btn1);
-    lv_label_set_text(label1, "Settings");
+    lv_label_set_text(label1, LV_SYMBOL_SETTINGS"\nSettings");
     lv_obj_center(label1);  // Centra la scritta
 
     lv_obj_t *btn2 = lv_btn_create(btn_cont);
@@ -49,7 +49,7 @@ void drawHomeScreen() {
     lv_obj_add_event_cb(btn2, launcher_event_handler, LV_EVENT_CLICKED, NULL);
     lv_obj_set_grid_cell(btn2, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);  // Colonna 1, riga 0
     lv_obj_t *label2 = lv_label_create(btn2);
-    lv_label_set_text(label2, "Launcher");
+    lv_label_set_text(label2, LV_SYMBOL_DOWNLOAD"\nFWFlash");
     lv_obj_center(label2);  // Centra la scritta
 
     lv_obj_t *btn3 = lv_btn_create(btn_cont);
@@ -57,7 +57,8 @@ void drawHomeScreen() {
     // lv_obj_add_event_cb(btn3, another_event_handler, LV_EVENT_CLICKED, NULL);
     lv_obj_set_grid_cell(btn3, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);  // Colonna 2, riga 0
     lv_obj_t *label3 = lv_label_create(btn3);
-    lv_label_set_text(label3, "Another");
+    lv_obj_add_event_cb(btn3, explorer_event_handler, LV_EVENT_CLICKED, NULL);
+    lv_label_set_text(label3, LV_SYMBOL_SD_CARD"\nFiles");
     lv_obj_center(label3);  // Centra la scritta
 
     lv_obj_t *btn4 = lv_btn_create(btn_cont);

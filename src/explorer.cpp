@@ -2,6 +2,7 @@
 #include "explorer.h"
 #include <lvgl.h>
 #include "launcher.h"
+#include "event_handlers.h"
 
 
 void showFileExplorer(lv_event_t *e) {
@@ -26,12 +27,7 @@ void showFileExplorer(lv_event_t *e) {
     lv_obj_set_size(list, 240, 280);
     lv_obj_align(list, LV_ALIGN_CENTER, 0, 0);
 
-    lv_obj_t *create_dir_btn = lv_btn_create(scr);
-    lv_obj_set_size(create_dir_btn, 100, 40);
-    lv_obj_align(create_dir_btn, LV_ALIGN_TOP_LEFT, 10, 10);
-    lv_obj_t *create_dir_label = lv_label_create(create_dir_btn);
-    lv_label_set_text(create_dir_label, "New Dir");
-    lv_obj_add_event_cb(create_dir_btn, create_dir_event_handler, LV_EVENT_CLICKED, NULL);
+  
 
     std::vector<FileInfo> files = list_files_in_dir(dir);
     for (const auto &file : files) {
@@ -45,14 +41,7 @@ void showFileExplorer(lv_event_t *e) {
 
     dir.close();
 
-    lv_obj_t *back_btn = lv_btn_create(scr);
-    lv_obj_set_size(back_btn, 80, 40);
-    lv_obj_align(back_btn, LV_ALIGN_TOP_LEFT, 10, 60);
-    lv_obj_t *back_label = lv_label_create(back_btn);
-    lv_label_set_text(back_label, "Back");
-    lv_obj_add_event_cb(back_btn, back_to_parent_dir, LV_EVENT_CLICKED, NULL);
-
-    drawNavBar();
+    drawExplorerNavBar();
 }
 
 void dir_event_handler(lv_event_t *e) {
@@ -100,7 +89,7 @@ void create_dir_event_handler(lv_event_t *e) {
     lv_label_set_text(no_label, "Cancel");
     lv_obj_add_event_cb(no_btn, showFileExplorer, LV_EVENT_CLICKED, NULL);
 
-    drawNavBar();
+    drawExplorerNavBar();
 }
 
 void confirm_create_dir_event_handler(lv_event_t *e) {
@@ -126,3 +115,49 @@ void back_to_parent_dir(lv_event_t *e) {
     }
     showFileExplorer();
 }
+
+//navbar for file explorer witch back button, home button and new dir button (like a +)
+void drawExplorerNavBar() {
+    short int dockiconsize = 50;
+    short int dockmargin = 55;
+    lv_obj_t *parent = lv_scr_act();
+
+    // DOCK
+    lv_obj_t *slide_menu = lv_obj_create(parent);
+    lv_obj_set_size(slide_menu, 240, dockmargin);  // Ridurre l'altezza del menu
+    lv_obj_set_style_bg_color(slide_menu, lv_color_hex(0xD3D3D3), 0);  // Colore grigio chiaro
+    lv_obj_align(slide_menu, LV_ALIGN_BOTTOM_MID,0,0);  // Posizionare il menu appena sopra la barra
+    lv_obj_clear_flag(slide_menu, LV_OBJ_FLAG_SCROLLABLE);  // Disabilita lo scrolling per il menu
+
+    // ADD DIR
+    lv_obj_t *add_dir_btn = lv_btn_create(slide_menu);
+    lv_obj_set_size(add_dir_btn, dockiconsize, dockiconsize);  // Rendere i pulsanti più piccoli
+    lv_obj_add_event_cb(add_dir_btn, create_dir_event_handler, LV_EVENT_CLICKED, NULL);
+    lv_obj_align(add_dir_btn, LV_ALIGN_LEFT_MID, 10, 0);  // Aggiungere margine per evitare che i pulsanti si tocchino
+    lv_obj_set_style_bg_color(add_dir_btn, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro iniziale
+    lv_obj_t *add_dir_label = lv_label_create(add_dir_btn);
+    lv_label_set_text(add_dir_label, LV_SYMBOL_PLUS);  // Utilizzare una rappresentazione testuale semplice
+    lv_obj_center(add_dir_label);
+
+    // HOME
+    lv_obj_t *home_BTN = lv_btn_create(slide_menu);
+    lv_obj_set_size(home_BTN, dockiconsize, dockiconsize);  // Rendere i pulsanti più piccoli
+    lv_obj_align(home_BTN, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_style_bg_color(home_BTN, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro
+    lv_obj_add_event_cb(home_BTN, home_button_event_handler, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *home_BTN_label = lv_label_create(home_BTN);
+    lv_label_set_text(home_BTN_label, LV_SYMBOL_HOME);  // Placeholder text
+    lv_obj_center(home_BTN_label);
+
+    // back
+    lv_obj_t *back_btn = lv_btn_create(slide_menu);
+    lv_obj_set_size(back_btn, dockiconsize, dockiconsize);  // Rendere i pulsanti più piccoli
+    lv_obj_align(back_btn, LV_ALIGN_RIGHT_MID, -10, 0);
+    lv_obj_set_style_bg_color(back_btn, lv_color_hex(0xA9A9A9), 0);  // Colore grigio chiaro
+    lv_obj_add_event_cb(back_btn, back_to_parent_dir, LV_EVENT_CLICKED, NULL);
+    lv_obj_t *back_label = lv_label_create(back_btn);
+    lv_label_set_text(back_label, LV_SYMBOL_REFRESH);  // Placeholder text
+    //center label
+    lv_obj_center(back_label);
+}
+    

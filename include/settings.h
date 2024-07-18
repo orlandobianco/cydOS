@@ -1,7 +1,16 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-void showSettings(); // Se questa è la funzione che vuoi chiamare
-void launchSettings(); // Aggiungi questa dichiarazione se la funzione si chiama così
+#include <lvgl.h> // Include LVGL headers
+
+void showSettings(lv_event_t *e = nullptr); // Allow default value for e
+void initSettings();
+void saveBrightness(int brightness);
+int loadBrightness();
+void showConnectivity(lv_event_t *e = nullptr); // Allow default value for e
+void showDisplaySettings(lv_event_t *e = nullptr); // Allow default value for e
+void showSensorsSettings(lv_event_t *e = nullptr); // Allow default value for e
+void showSDCardSettings(lv_event_t *e = nullptr); // Allow default value for e
+void showBackupSettings(lv_event_t *e = nullptr); // Allow default value for e
 
 #endif // SETTINGS_H
