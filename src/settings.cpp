@@ -5,6 +5,7 @@
 #include <SdFat.h>
 #include "settings.h"
 #include "SD_utils.h"
+#include "settings_WIFI.h"
 #include "ui.h"
 
 extern TFT_eSPI tft;
@@ -143,9 +144,6 @@ void showSettings(lv_event_t *e) {
     btn = lv_list_add_btn(list, NULL, "Display");
     lv_obj_add_event_cb(btn, showDisplaySettings, LV_EVENT_CLICKED, NULL);
 
-    btn = lv_list_add_btn(list, NULL, "Sensors");
-    lv_obj_add_event_cb(btn, showSensorsSettings, LV_EVENT_CLICKED, NULL);
-
     btn = lv_list_add_btn(list, NULL, "SD Card");
     lv_obj_add_event_cb(btn, showSDCardSettings, LV_EVENT_CLICKED, NULL);
 
@@ -156,11 +154,17 @@ void showSettings(lv_event_t *e) {
 }
 
 void showConnectivity(lv_event_t *e) {
-    // Placeholder for future implementation
-    showSettings();
-}
+    lv_obj_t *scr = lv_scr_act();
+    lv_obj_clean(scr);
 
-void showSensorsSettings(lv_event_t *e) {
-    // Placeholder for future implementation
-    showSettings();
+    lv_obj_t *list = lv_list_create(scr);
+    lv_obj_set_size(list, 240, 280);
+    lv_obj_align(list, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t *btn;
+
+    btn = lv_list_add_btn(list, NULL, "WiFi");
+    lv_obj_add_event_cb(btn, showWiFiSettings, LV_EVENT_CLICKED, NULL);
+
+    drawNavBar();
 }
