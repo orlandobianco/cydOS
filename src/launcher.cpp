@@ -4,21 +4,17 @@
 #include "utils.h"
 #include "event_handlers.h"
 #include "ui.h"
-#include "esp_ota_ops.h"
-#include "esp_system.h"
-#include "esp_partition.h"
+#include "SD_utils.h"  // Include the new header for SD utilities
+#include "OTA_utils.h" // Include the new header for OTA utilities
 
 extern TFT_eSPI tft;
-
-SdFat sd;
+extern SdFat sd;
 static bool is_initialized = false;
 
 void showError(const char *msg);
 void showLauncher();
 void install_event_handler(lv_event_t *e);
 void confirm_install_event_handler(lv_event_t *e);
-void ota_task(void *pvParameter);
-esp_err_t flash_binary(const char *path, const esp_partition_t *partition);
 
 void showError(const char *msg) {
     lv_obj_t *scr = lv_scr_act();
@@ -39,34 +35,23 @@ void showError(const char *msg) {
 
 void showLauncher() {
     if (!is_initialized) {
-        if (!sd.begin(SS, SD_SCK_MHZ(32))) {
-            Serial.println("Failed to initialize SD card");
+        if (!init_sd_card()) {
             showError("SD init failed!");
             return;
         }
         is_initialized = true;
     }
 
-    SdFile appsDir;
-    if (!appsDir.open("/apps")) {
-        if (sd.mkdir("/apps")) {
-            Serial.println("apps dir created");
-        } else {
-            Serial.println("Failed to create apps dir");
-            showError("Failed to create apps dir");
-            return;
-        }
-    } else {
-        appsDir.close();
-    }
-
-    if (!appsDir.open("/apps")) {
-        Serial.println("Failed to open apps directory");
-        showError("apps dir open failed!");
+    if (!check_and_create_dir("/apps")) {
+        showError("Failed to create apps dir");
         return;
     }
 
-    Serial.println("Opened apps directory successfully");
+    SdFile appsDir;
+    if (!open_dir(appsDir, "/apps")) {
+        showError("Failed to open apps directory");
+        return;
+    }
 
     lv_obj_t *scr = lv_scr_act();
     lv_obj_clean(scr);
@@ -118,20 +103,16 @@ void install_event_handler(lv_event_t *e) {
     char full_dir_path[128];
     snprintf(full_dir_path, sizeof(full_dir_path), "/apps/%s", dirName);
 
-    if (!dir.open(full_dir_path)) {
+    if (!open_dir(dir, full_dir_path)) {
         showError("Failed to open selected directory!");
         return;
     }
 
-    dir.rewind();
-    SdFile file;
-    char fileName[64];
-
-    while (file.openNext(&dir, O_RDONLY)) {
-        file.getName(fileName, sizeof(fileName));
-        lv_list_add_btn(file_list, NULL, fileName);
-        Serial.printf("Found file: %s\n", fileName);
-        file.close();
+    std::vector<FileInfo> files = list_files_in_dir(dir);
+    for (const auto &file : files) {
+        char file_info[128];
+        snprintf(file_info, sizeof(file_info), "%s (%d KB)", file.name, file.size / 1024);
+        lv_list_add_btn(file_list, NULL, file_info);
     }
 
     dir.close();
@@ -161,108 +142,4 @@ void confirm_install_event_handler(lv_event_t *e) {
     Serial.printf("Confirmed install from directory: %s\n", dirName);
 
     xTaskCreatePinnedToCore(ota_task, "ota_task", 8192, (void *)dirName, 5, NULL, 1);
-}
-
-void ota_task(void *pvParameter) {
-    const char *dir_name = (const char *)pvParameter;
-    char full_path[128];
-
-    // Flash bootloader if available
-    snprintf(full_path, sizeof(full_path), "/apps/%s/bootloader.bin", dir_name);
-    Serial.printf("Checking for bootloader: %s\n", full_path);
-    if (sd.exists(full_path)) {
-        Serial.println("Bootloader found, flashing...");
-        const esp_partition_t* bootloader_partition = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_FACTORY, NULL);
-        if (bootloader_partition) {
-            Serial.printf("Bootloader partition size: %d\n", bootloader_partition->size);
-            if (flash_binary(full_path, bootloader_partition) != ESP_OK) {
-                showError("Failed to flash bootloader!");
-                vTaskDelete(NULL);
-                return;
-            }
-        }
-    }
-
-    // Flash app0 (the main firmware) - mandatory
-    snprintf(full_path, sizeof(full_path), "/apps/%s/firmware.bin", dir_name);
-    Serial.printf("Checking for firmware: %s\n", full_path);
-    if (!sd.exists(full_path)) {
-        showError("Firmware file not found!");
-        vTaskDelete(NULL);
-        return;
-    }
-    Serial.println("Firmware found, flashing...");
-
-    const esp_partition_t *firmware_partition = esp_ota_get_next_update_partition(NULL);
-    if (firmware_partition) {
-        Serial.printf("Firmware partition size: %d\n", firmware_partition->size);
-        if (flash_binary(full_path, firmware_partition) != ESP_OK) {
-            showError("Failed to flash firmware!");
-            vTaskDelete(NULL);
-            return;
-        }
-
-        // Set the boot partition to the newly flashed firmware partition
-        esp_err_t err = esp_ota_set_boot_partition(firmware_partition);
-        if (err != ESP_OK) {
-            showError("Failed to set boot partition!");
-            vTaskDelete(NULL);
-            return;
-        }
-    }
-
-    // Flash boot_app0 if available
-    snprintf(full_path, sizeof(full_path), "/apps/%s/boot_app0.bin", dir_name);
-    Serial.printf("Checking for boot_app0: %s\n", full_path);
-    if (sd.exists(full_path)) {
-        Serial.println("boot_app0 found, flashing...");
-        const esp_partition_t* boot_app0_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_OTA, NULL);
-        if (boot_app0_partition) {
-            Serial.printf("boot_app0 partition size: %d\n", boot_app0_partition->size);
-            if (flash_binary(full_path, boot_app0_partition) != ESP_OK) {
-                showError("Failed to flash boot_app0!");
-                vTaskDelete(NULL);
-                return;
-            }
-        }
-    }
-
-    ESP_LOGI("OTA", "OTA update complete, restarting...");
-    esp_restart();
-}
-
-esp_err_t flash_binary(const char *path, const esp_partition_t *partition) {
-    SdFile file;
-    if (!file.open(path, O_RDONLY)) {
-        ESP_LOGE("OTA", "Failed to open file for reading: %s", path);
-        return ESP_FAIL;
-    }
-
-    esp_ota_handle_t ota_handle;
-    esp_err_t err = esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &ota_handle);
-    if (err != ESP_OK) {
-        file.close();
-        ESP_LOGE("OTA", "esp_ota_begin failed: %s", esp_err_to_name(err));
-        return err;
-    }
-
-    char buf[1024];
-    int bytes_read;
-    while ((bytes_read = file.read(buf, sizeof(buf))) > 0) {
-        err = esp_ota_write(ota_handle, buf, bytes_read);
-        if (err != ESP_OK) {
-            file.close();
-            ESP_LOGE("OTA", "esp_ota_write failed: %s", esp_err_to_name(err));
-            return err;
-        }
-    }
-
-    file.close();
-    err = esp_ota_end(ota_handle);
-    if (err != ESP_OK) {
-        ESP_LOGE("OTA", "esp_ota_end failed: %s", esp_err_to_name(err));
-        return err;
-    }
-
-    return ESP_OK;
 }
