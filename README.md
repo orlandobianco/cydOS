@@ -20,13 +20,11 @@ The settings interface allows users to adjust various system configurations. Thi
 
 ### Prerequisites
 - ESP32-2432S028R device (CYD)
-- XPT2046 touchscreen controller
-- SD card and SD card reader
-- Arduino IDE with PlatformIO
+- VSCODE IDE with PlatformIO
 
 ### Setup
 
 1. **Clone the Repository**
    ```sh
    git clone https://github.com/orlandobianco/cydOS.git
-   cd cydOS
+

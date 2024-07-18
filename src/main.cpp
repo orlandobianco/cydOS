@@ -3,15 +3,9 @@
 #include <XPT2046_Bitbang.h>
 #include "home_screen.h"
 #include "utils.h" // Include il file di intestazione
+#include "main.h"
 
-// Define touch screen and SD card pins
-#define XPT2046_IRQ 36
-#define XPT2046_MOSI 32
-#define XPT2046_MISO 39
-#define XPT2046_CLK 25
-#define XPT2046_CS 33
-#define SD_CS       5
-
+//inizialize the SPI class
 SPIClass mySpi = SPIClass(VSPI);
 XPT2046_Bitbang ts = XPT2046_Bitbang(XPT2046_MOSI, XPT2046_MISO, XPT2046_CLK, XPT2046_CS);
 
@@ -34,7 +28,7 @@ void my_disp_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *c
 
     lv_disp_flush_ready(disp_drv);
 }
-
+// Touchpad read callback function
 void my_touchpad_read(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
     TouchPoint p = ts.getTouch();  // Use getTouch() function and correct type
     Serial.printf("TouchPoint x: %d, y: %d\n", p.x, p.y);  // Debugging line
@@ -70,11 +64,11 @@ void setup() {
     mySpi.begin(25, 39, 32, 33);
     ts.begin();  // No parameters needed
 
-    pinMode(SD_CS, OUTPUT);
-    pinMode(XPT2046_CS, OUTPUT);
-    digitalWrite(SD_CS, HIGH);  // Deselect SD card initially
-    digitalWrite(XPT2046_CS, HIGH);  // Deselect touchscreen initially
+    pinMode(LED_RED, OUTPUT);
+    pinMode(LED_GREEN, OUTPUT);
+    pinMode(LED_BLUE, OUTPUT);
 
+  
     lv_init();
 
     lv_disp_draw_buf_init(&draw_buf, buf, NULL, 240 * 320 / 10);
@@ -92,7 +86,7 @@ void setup() {
     indev_drv.type = LV_INDEV_TYPE_POINTER;
     indev_drv.read_cb = my_touchpad_read;
     lv_indev_drv_register(&indev_drv);
-
+//start UI
     drawHomeScreen();
 }
 
