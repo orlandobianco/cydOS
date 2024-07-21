@@ -1,7 +1,9 @@
 #include "WIFI_utils.h"
 #include <SdFat.h>
 #include <SPIFFS.h>
-#include <vector> // Include vector header
+#include <vector>
+#include <WiFi.h>
+#include <FS.h>
 
 extern SdFat sd;
 
@@ -56,24 +58,28 @@ bool connectToNetwork(const char* ssid, const char* password) {
 }
 
 void saveWiFiCredentials(const char* ssid, const char* password) {
-    if (!SPIFFS.begin()) {
-        SPIFFS.format();
-        SPIFFS.begin();
+    if (!SPIFFS.begin(true)) { // true will format SPIFFS if mount fails
+        Serial.println("SPIFFS Mount Failed");
+        return;
     }
     File file = SPIFFS.open("/config/wifi.csv", FILE_APPEND);
     if (!file) {
+        Serial.println("Failed to open file for writing");
         return;
     }
     file.printf("%s,%s\n", ssid, password);
     file.close();
+    SPIFFS.end();
 }
 
 bool loadWiFiCredentials(const char* ssid, char* password, size_t maxLen) {
-    if (!SPIFFS.begin()) {
+    if (!SPIFFS.begin(true)) { // true will format SPIFFS if mount fails
+        Serial.println("SPIFFS Mount Failed");
         return false;
     }
     File file = SPIFFS.open("/config/wifi.csv", FILE_READ);
     if (!file) {
+        Serial.println("Failed to open file for reading");
         return false;
     }
     while (file.available()) {
@@ -84,9 +90,11 @@ bool loadWiFiCredentials(const char* ssid, char* password, size_t maxLen) {
         if (savedSSID == ssid) {
             savedPassword.toCharArray(password, maxLen);
             file.close();
+            SPIFFS.end();
             return true;
         }
     }
     file.close();
+    SPIFFS.end();
     return false;
 }

@@ -4,6 +4,7 @@
 #include <TFT_eSPI.h>
 #include <vector>
 #include "ui.h"
+#include <Arduino.h>
 extern TFT_eSPI tft;
 
 static lv_obj_t *wifi_list;
@@ -11,6 +12,8 @@ static lv_obj_t *wifi_list;
 void connect_to_wifi_event_cb(lv_event_t *e) {
     lv_obj_t *btn = lv_event_get_target(e);
     const char *ssid = (const char *)lv_obj_get_user_data(btn);
+
+    Serial.printf("Attempting to connect to SSID: %s\n", ssid);
 
     char password[64] = "";
     if (!loadWiFiCredentials(ssid, password, sizeof(password))) {
@@ -42,10 +45,13 @@ void connect_to_wifi_event_cb(lv_event_t *e) {
         lv_obj_add_event_cb(connect_btn, connect_to_wifi_event_cb, LV_EVENT_CLICKED, ta);
     } else {
         // Connect to WiFi using the saved password
+        Serial.printf("Connecting to SSID: %s with saved password\n", ssid);
         if (connectToNetwork(ssid, password)) {
+            Serial.println("Connection successful");
             showWiFiSettings();
         } else {
             // Handle connection failure
+            Serial.println("Connection failed");
             lv_obj_t *label = lv_label_create(lv_scr_act());
             lv_label_set_text(label, "Failed to connect to WiFi");
             lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
@@ -55,7 +61,9 @@ void connect_to_wifi_event_cb(lv_event_t *e) {
 
 void showAvailableNetworks() {
     std::vector<String> networks = scanNetworks();
+    Serial.println("Available Networks:");
     for (const auto &network : networks) {
+        Serial.println(network);
         lv_obj_t *btn = lv_list_add_btn(wifi_list, NULL, network.c_str());
         char *network_copy = strdup(network.c_str());
         lv_obj_set_user_data(btn, network_copy);
