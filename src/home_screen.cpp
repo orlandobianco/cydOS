@@ -4,8 +4,11 @@
 #include "utils.h"
 #include <Arduino.h>
 #include "ui.h"
+#include "settings.h"
+#include "SD_utils.h"
 
 void drawHomeScreen() {
+    init_sd_card();
     lv_obj_t *scr = lv_scr_act();
     short int iconsize = 67;
     // Imposta lo sfondo nero per la schermata principale
