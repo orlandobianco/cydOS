@@ -1,6 +1,17 @@
 # 🌟 cydOS
 
+**🚧 Work in Progress - Major Security and Performance Improvements 🚧**
+
 cydOS is a versatile and user-friendly graphical user interface (GUI) designed specifically for the ESP32-2432S028R device, also known as CYD. This project aggregates various applications and includes several standalone functionalities, offering a comprehensive environment for managing and running apps directly from an SD card.
+
+## 📋 Recent Updates (WIP)
+
+- ✅ **Fixed critical memory leaks** in launcher, WiFi settings, and file explorer
+- ✅ **Enhanced security** with input validation and path traversal protection  
+- ✅ **Improved WiFi connectivity** with async operations and progress indicators
+- ✅ **Better error handling** throughout the codebase
+- ✅ **Performance optimizations** eliminating UI blocking operations
+- 🔄 **Code refactoring** for better maintainability and stability
 
 ## 🚀 Features
 
