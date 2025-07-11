@@ -10,8 +10,18 @@ extern TFT_eSPI tft;
 
 static lv_obj_t *wifi_list;
 
+static void free_network_name(lv_event_t *e) {
+    lv_obj_t *btn = lv_event_get_target(e);
+    char *network_name = (char *)lv_obj_get_user_data(btn);
+    if (network_name) {
+        free(network_name);
+        lv_obj_set_user_data(btn, NULL);
+    }
+}
+
 // Forward declare the function
 void connect_to_wifi_event_cb(lv_event_t *e);
+void wifi_connection_timer_cb(lv_timer_t *timer);
 
 void prompt_for_password(const char* ssid) {
     lv_obj_t *scr = lv_scr_act();
@@ -61,46 +71,38 @@ void connect_to_wifi_event_cb(lv_event_t *e) {
         }
         Serial.printf("Attempting to connect to SSID: %s with password: %s\n", ssid, password);
         saveWiFiCredentials(ssid, password);
-        if (connectToNetwork(ssid, password)) {
-            Serial.println("Connection successful");
-            lv_obj_t *scr = lv_scr_act();
-            lv_obj_clean(scr);
-            lv_obj_t *label = lv_label_create(scr);
-            lv_label_set_text(label, "Connected successfully!");
-            lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-            delay(2000); // Show the message for 2 seconds
-            showWiFiSettings();
-        } else {
-            Serial.println("Connection failed");
-            lv_obj_t *label = lv_label_create(lv_scr_act());
-            lv_label_set_text(label, "Failed to connect to WiFi");
-            lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-            // Free the memory allocated for the SSID
-            free((void *)ssid);
-        }
+        
+        // Start async connection
+        startAsyncConnect(ssid, password);
+        
+        // Show connecting message
+        lv_obj_t *scr = lv_scr_act();
+        lv_obj_clean(scr);
+        lv_obj_t *label = lv_label_create(scr);
+        lv_label_set_text(label, "Connecting to WiFi...");
+        lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+        
+        // Create a timer to check connection status
+        lv_timer_create(wifi_connection_timer_cb, 500, NULL);
     } else {
         // Load saved password
         char password[64] = "";
         Serial.printf("Loading saved password for SSID: %s\n", ssid);
         if (loadWiFiCredentials(ssid, password, sizeof(password))) {
             Serial.printf("Connecting to SSID: %s with saved password\n", ssid);
-            if (connectToNetwork(ssid, password)) {
-                Serial.println("Connection successful");
-                lv_obj_t *scr = lv_scr_act();
-                lv_obj_clean(scr);
-                lv_obj_t *label = lv_label_create(scr);
-                lv_label_set_text(label, "Connected successfully!");
-                lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-                delay(2000); // Show the message for 2 seconds
-                showWiFiSettings();
-            } else {
-                Serial.println("Connection failed");
-                lv_obj_t *label = lv_label_create(lv_scr_act());
-                lv_label_set_text(label, "Failed to connect to WiFi");
-                lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
-                // Free the memory allocated for the SSID
-                free((void *)ssid);
-            }
+            
+            // Start async connection
+            startAsyncConnect(ssid, password);
+            
+            // Show connecting message
+            lv_obj_t *scr = lv_scr_act();
+            lv_obj_clean(scr);
+            lv_obj_t *label = lv_label_create(scr);
+            lv_label_set_text(label, "Connecting to WiFi...");
+            lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+            
+            // Create a timer to check connection status
+            lv_timer_create(wifi_connection_timer_cb, 500, NULL);
         } else {
             Serial.println("No saved password found, prompting for input");
             prompt_for_password(ssid);
@@ -120,7 +122,8 @@ void showAvailableNetworks() {
             continue;
         }
         lv_obj_set_user_data(btn, network_copy);
-        lv_obj_add_event_cb(btn, connect_to_wifi_event_cb, LV_EVENT_CLICKED, network_copy);
+        lv_obj_add_event_cb(btn, connect_to_wifi_event_cb, LV_EVENT_CLICKED, NULL);
+        lv_obj_add_event_cb(btn, free_network_name, LV_EVENT_DELETE, NULL);
     }
 }
 
@@ -168,4 +171,57 @@ void showWiFiSettings(lv_event_t *e) {
     }
 
     drawNavBar();
+}
+
+void wifi_connection_timer_cb(lv_timer_t *timer) {
+    updateWiFiConnection();
+    WiFiConnectionState state = checkConnectionStatus();
+    
+    switch (state) {
+        case WIFI_STATE_CONNECTED:
+            lv_timer_del(timer);
+            lv_obj_t *scr = lv_scr_act();
+            lv_obj_clean(scr);
+            lv_obj_t *label = lv_label_create(scr);
+            lv_label_set_text(label, "Connected successfully!");
+            lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+            
+            // Create a timer to show success message briefly then return to settings
+            lv_timer_create([](lv_timer_t *t) {
+                lv_timer_del(t);
+                showWiFiSettings();
+            }, 2000, NULL);
+            break;
+            
+        case WIFI_STATE_FAILED:
+            lv_timer_del(timer);
+            lv_obj_t *scr_fail = lv_scr_act();
+            lv_obj_clean(scr_fail);
+            lv_obj_t *label_fail = lv_label_create(scr_fail);
+            lv_label_set_text(label_fail, "Failed to connect to WiFi");
+            lv_obj_align(label_fail, LV_ALIGN_CENTER, 0, 0);
+            
+            // Create a timer to show error message briefly then return to settings
+            lv_timer_create([](lv_timer_t *t) {
+                lv_timer_del(t);
+                showWiFiSettings();
+            }, 2000, NULL);
+            break;
+            
+        case WIFI_STATE_CONNECTING:
+            {
+                int progress = getConnectionProgress();
+                lv_obj_t *scr_connecting = lv_scr_act();
+                lv_obj_t *label_connecting = lv_obj_get_child(scr_connecting, 0);
+                if (label_connecting) {
+                    char progress_text[64];
+                    snprintf(progress_text, sizeof(progress_text), "Connecting to WiFi... %d%%", progress);
+                    lv_label_set_text(label_connecting, progress_text);
+                }
+            }
+            break;
+            
+        default:
+            break;
+    }
 }

@@ -3,7 +3,38 @@
 #include <lvgl.h>
 #include "launcher.h"
 #include "event_handlers.h"
+#include "utils.h"
 
+// Static variables moved from header
+static bool is_initialized = false;
+static char current_path[128] = "/";
+
+// Accessor functions for the static variables
+bool get_explorer_initialized() {
+    return is_initialized;
+}
+
+void set_explorer_initialized(bool value) {
+    is_initialized = value;
+}
+
+char* get_current_path() {
+    return current_path;
+}
+
+void set_current_path(const char* path) {
+    strncpy(current_path, path, sizeof(current_path) - 1);
+    current_path[sizeof(current_path) - 1] = '\0';
+}
+
+static void free_file_name(lv_event_t *e) {
+    lv_obj_t *btn = lv_event_get_target(e);
+    char *fileName = (char *)lv_obj_get_user_data(btn);
+    if (fileName) {
+        free(fileName);
+        lv_obj_set_user_data(btn, NULL);
+    }
+}
 
 void showFileExplorer(lv_event_t *e) {
     if (!is_initialized) {
@@ -37,6 +68,7 @@ void showFileExplorer(lv_event_t *e) {
         char *file_name_copy = strdup(file.name);
         lv_obj_set_user_data(btn, file_name_copy);
         lv_obj_add_event_cb(btn, dir_event_handler, LV_EVENT_CLICKED, file_name_copy);
+        lv_obj_add_event_cb(btn, free_file_name, LV_EVENT_DELETE, NULL);
     }
 
     dir.close();
@@ -48,9 +80,15 @@ void dir_event_handler(lv_event_t *e) {
     lv_obj_t *btn = lv_event_get_target(e);
     const char *dirName = (const char *)lv_obj_get_user_data(btn);
 
-    char new_path[128];
-    snprintf(new_path, sizeof(new_path), "%s/%s", current_path, dirName);
-    strncpy(current_path, new_path, sizeof(current_path));
+    // Use safe path join to prevent buffer overflow and path traversal
+    char new_path[256];  // Increased buffer size
+    if (!safe_path_join(new_path, sizeof(new_path), current_path, dirName)) {
+        showError("Invalid directory name or path too long");
+        return;
+    }
+
+    strncpy(current_path, new_path, sizeof(current_path) - 1);
+    current_path[sizeof(current_path) - 1] = '\0';  // Ensure null termination
 
     showFileExplorer();
 }
@@ -96,6 +134,12 @@ void confirm_create_dir_event_handler(lv_event_t *e) {
     lv_obj_t *btn = lv_event_get_target(e);
     lv_obj_t *ta = (lv_obj_t *)lv_obj_get_user_data(btn);
     const char *dirName = lv_textarea_get_text(ta);
+
+    // Validate directory name using utility function
+    if (!validate_path_component(dirName)) {
+        showError("Invalid directory name");
+        return;
+    }
 
     if (create_directory(current_path, dirName)) {
         showFileExplorer();

@@ -8,7 +8,10 @@
 #include "SD_utils.h"
 
 void drawHomeScreen() {
-    init_sd_card();
+    if (!init_sd_card()) {
+        Serial.println("Warning: SD card initialization failed in home screen");
+        // Continue without SD card functionality
+    }
     lv_obj_t *scr = lv_scr_act();
     short int iconsize = 67;
     // Imposta lo sfondo nero per la schermata principale

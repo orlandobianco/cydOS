@@ -92,6 +92,5 @@ void setup() {
 
 void loop() {
     lv_timer_handler();
-    lv_task_handler();  // Call LVGL task handler
     delay(5);
 }

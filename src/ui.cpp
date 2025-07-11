@@ -52,3 +52,20 @@ void drawNavBar() {
     lv_label_set_text(placeholder2_label, LV_SYMBOL_USB);  // Placeholder text
     lv_obj_center(placeholder2_label);
 }
+
+void showError(const char *msg) {
+    lv_obj_t *scr = lv_scr_act();
+    lv_obj_clean(scr);
+    lv_obj_t *label = lv_label_create(scr);
+    lv_label_set_text(label, msg);
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, -20);
+
+    lv_obj_t *back_btn = lv_btn_create(scr);
+    lv_obj_set_size(back_btn, 80, 40);
+    lv_obj_align(back_btn, LV_ALIGN_CENTER, 0, 20);
+    lv_obj_t *back_label = lv_label_create(back_btn);
+    lv_label_set_text(back_label, "Back");
+    lv_obj_add_event_cb(back_btn, home_button_event_handler, LV_EVENT_CLICKED, NULL);
+    drawNavBar();
+    Serial.println("Error displayed with navbar.");
+}

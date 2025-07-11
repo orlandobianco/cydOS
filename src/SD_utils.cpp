@@ -1,6 +1,7 @@
 #include <SdFat.h>
 #include <TFT_eSPI.h>
 #include "SD_utils.h"
+#include "utils.h"
 
 // External declaration of tft object
 extern TFT_eSPI tft;
@@ -55,8 +56,14 @@ std::vector<FileInfo> list_files_in_dir(SdFile &dir) {
 }
 
 bool create_directory(const char *path, const char *dirName) {
-    char full_path[128];
-    snprintf(full_path, sizeof(full_path), "%s/%s", path, dirName);
+    char full_path[256];  // Increased buffer size
+    
+    // Use safe path join to prevent issues
+    if (!safe_path_join(full_path, sizeof(full_path), path, dirName)) {
+        Serial.printf("Failed to create directory - invalid path: %s/%s\n", path, dirName);
+        return false;
+    }
+    
     if (sd.mkdir(full_path)) {
         Serial.printf("Directory %s created\n", full_path);
         return true;

@@ -11,26 +11,17 @@ extern TFT_eSPI tft;
 extern SdFat sd;
 static bool is_initialized = false;
 
-void showError(const char *msg);
 void showLauncher();
 void install_event_handler(lv_event_t *e);
 void confirm_install_event_handler(lv_event_t *e);
 
-void showError(const char *msg) {
-    lv_obj_t *scr = lv_scr_act();
-    lv_obj_clean(scr);
-    lv_obj_t *label = lv_label_create(scr);
-    lv_label_set_text(label, msg);
-    lv_obj_align(label, LV_ALIGN_CENTER, 0, -20);
-
-    lv_obj_t *back_btn = lv_btn_create(scr);
-    lv_obj_set_size(back_btn, 80, 40);
-    lv_obj_align(back_btn, LV_ALIGN_CENTER, 0, 20);
-    lv_obj_t *back_label = lv_label_create(back_btn);
-    lv_label_set_text(back_label, "Back");
-    lv_obj_add_event_cb(back_btn, home_button_event_handler, LV_EVENT_CLICKED, NULL);
-    drawNavBar();
-    Serial.println("Error displayed with navbar.");
+static void free_dir_name(lv_event_t *e) {
+    lv_obj_t *btn = lv_event_get_target(e);
+    char *dirName = (char *)lv_obj_get_user_data(btn);
+    if (dirName) {
+        free(dirName);
+        lv_obj_set_user_data(btn, NULL);
+    }
 }
 
 void showLauncher() {
@@ -72,6 +63,7 @@ void showLauncher() {
             char *dirNameCopy = strdup(dirName);
             lv_obj_set_user_data(btn, dirNameCopy);
             lv_obj_add_event_cb(btn, install_event_handler, LV_EVENT_CLICKED, dirNameCopy);
+            lv_obj_add_event_cb(btn, free_dir_name, LV_EVENT_DELETE, NULL);
             Serial.printf("Created button for directory: %s\n", dirName);
         }
         entry.close();
@@ -100,8 +92,11 @@ void install_event_handler(lv_event_t *e) {
     lv_obj_align(file_list, LV_ALIGN_CENTER, 0, 20);
 
     SdFile dir;
-    char full_dir_path[128];
-    snprintf(full_dir_path, sizeof(full_dir_path), "/apps/%s", dirName);
+    char full_dir_path[256];  // Increased buffer size
+    if (!safe_path_join(full_dir_path, sizeof(full_dir_path), "/apps", dirName)) {
+        showError("Invalid directory name or path too long");
+        return;
+    }
 
     if (!open_dir(dir, full_dir_path)) {
         showError("Failed to open selected directory!");
